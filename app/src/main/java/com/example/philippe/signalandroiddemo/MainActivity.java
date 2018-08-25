@@ -29,7 +29,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String API_URL = "http://192.168.178.20:8081";
+    public static final String API_URL = "http://192.168.178.20:8081";
 
     EditText editTextName;
     EditText editTextPassword;
