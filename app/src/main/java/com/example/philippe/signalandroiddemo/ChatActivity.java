@@ -1,45 +1,11 @@
 package com.example.philippe.signalandroiddemo;
 
 
-import android.content.Context;
-import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.spongycastle.openpgp.PGPException;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-
-import de.emporacreative.pgpandroiddemo.PgpUtil.PgpHelper;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import android.support.v7.app.AppCompatActivity;
 
 public class ChatActivity extends AppCompatActivity {
-    String chatPartnerName;
+    /*String chatPartnerName;
     int chatPartnerId;
     ArrayList<String> arrayListReceivedMessages = new ArrayList<>();
     ArrayList<String> arrayListSentMessages = new ArrayList<>();
@@ -54,7 +20,7 @@ public class ChatActivity extends AppCompatActivity {
     JSONObject userdataChatpartner;
     private String plainTextFile = "plain-text.txt";
     private String cipherTextFile = "cypher-text.txt";
-    private String decPlainTextFile = "dec-plain-text.txt";
+    private String decPlainTextFile = "dec-plain-text.txt";*/
 
 
     @Override
@@ -62,17 +28,17 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        httpClient = new OkHttpClient();
-        getDataFromIntent();
-
-        getDataFromChatPartner();
-
-        initActionbar();
-
-        initList();
+//        httpClient = new OkHttpClient();
+//        getDataFromIntent();
+//
+//        getDataFromChatPartner();
+//
+//        initActionbar();
+//
+//        initList();
     }
 
-    @Override
+    /*@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.update_menu, menu);
@@ -112,7 +78,7 @@ public class ChatActivity extends AppCompatActivity {
         JSONObject jsonObject = new JSONObject();
 
         try {
-            /*save in sendList*/
+            *//*save in sendList*//*
             arrayListSentMessages.add("(" + MyUtils.convertTime(timestamp) + ") " + userdataUser.getString("name") + ": " + clearMessage);
             updateMessageList();
 
@@ -295,9 +261,9 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
-    /**
+    *//**
      * @see "https://github.com/damico/OpenPgp-BounceCastle-Example/blob/master/src/org/jdamico/bc/openpgp/tests/TestBCOpenPGP.java"
-     */
+     *//*
     private void encrypt(int receiverId, String nachricht) throws IOException, PGPException {
         boolean isArmored = true;
         boolean integrityCheck = true;
@@ -310,9 +276,9 @@ public class ChatActivity extends AppCompatActivity {
         pubKeyIs.close();
     }
 
-    /**
+    *//**
      * @see "https://github.com/damico/OpenPgp-BounceCastle-Example/blob/master/src/org/jdamico/bc/openpgp/tests/TestBCOpenPGP.java"
-     */
+     *//*
     private void decrypt(String username, String passwd) {
         FileInputStream cipheredFileIs = null;
         try {
@@ -332,5 +298,5 @@ public class ChatActivity extends AppCompatActivity {
         } catch (PGPException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 }

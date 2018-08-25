@@ -1,31 +1,25 @@
 package com.example.philippe.signalandroiddemo;
 
-import android.content.Context;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.philippe.signalandroiddemo.signal.SignalUser;
+import com.example.philippe.signalandroiddemo.signal.SignalWrapper;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.openpgp.PGPException;
+import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.state.PreKeyRecord;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
 
-import de.emporacreative.pgpandroiddemo.PgpUtil.RSAKeyPairGenerator;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -35,10 +29,10 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String API_URL = "http://192.168.178.20:8081";
+
     EditText editTextName;
     EditText editTextPassword;
-
-    JSONObject jsonObject;
 
     OkHttpClient httpClient;
     MediaType JSON = MediaType.get("application/json; charset=utf-8");
@@ -55,64 +49,72 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void register(View view) {
-
+        SignalUser user = null;
         try {
-            genKeyPair(editTextName.getText().toString(), editTextPassword.getText().toString());
-        } catch (Exception e) {
+            user = SignalWrapper.register(editTextName.getText().toString());
+            sendUserDataToDatabase(user);
+        } catch (InvalidKeyException e) {
             e.printStackTrace();
-            Toast.makeText(this, "Fehler beim Erstellen der Schlüssel", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Fehler beim Erzeugen der Schlüssel", Toast.LENGTH_SHORT).show();
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Fehler bei der Registrierung", Toast.LENGTH_SHORT).show();
         }
-        sendUserDataToDatabase();
     }
 
-    private void genKeyPair(String name, String passwd) throws IOException, PGPException, NoSuchAlgorithmException {
-        boolean isArmored = true;
-
-        RSAKeyPairGenerator rkpg = new RSAKeyPairGenerator();
-
-        Security.addProvider(new BouncyCastleProvider());
-
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
-
-        kpg.initialize(2048);
-
-        KeyPair kp = kpg.generateKeyPair();
-
-        FileOutputStream out1 = openFileOutput("privKey" + name + ".txt", Context.MODE_PRIVATE);
-        FileOutputStream out2 = openFileOutput("pubKey" + name + ".txt", Context.MODE_PRIVATE);
-
-        rkpg.exportKeyPair(out1, out2, kp.getPublic(), kp.getPrivate(), name, passwd.toCharArray(), isArmored);
-
-
-    }
-
-    private void sendUserDataToDatabase() {
+    private void sendUserDataToDatabase(SignalUser user) throws JSONException {
         /*send userdata to DB*/
-        jsonObject = new JSONObject();
-        FileInputStream pubKeyIs = null;
-        String username = editTextName.getText().toString();
-        String password = editTextPassword.getText().toString();
-        try {
-            pubKeyIs = openFileInput("pubKey" + username + ".txt");
-        } catch (FileNotFoundException e) {
-            Toast.makeText(this, "FileNotFoundException", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-        }
-        String publicKey = MyUtils.convertInputStreamToString(pubKeyIs);
-        try {
-            jsonObject.put("name", username);
-            jsonObject.put("email", "not.set@email.yet");
-            jsonObject.put("password", password); //todo encrypt
-            jsonObject.put("pgpkey", publicKey);
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        /*
+          Create a JSON Object with the following structure:
+          {
+               "username": String,
+               "preKeyBundle": {
+                   "identityKey": String,
+                   "signedPreKey": {
+                       "keyId": Integer,
+                       "publicKey": String,
+                       "signature": String
+                   },
+                   "registrationId": Integer,
+                   "preKeys": [
+                       {
+                           "keyId": Integer,
+                           "publicKey": String
+                       },
+                       ...
+                   ]
+               }
+          }
+         */
+
+        JSONObject spk = new JSONObject();
+        spk.put("keyId", user.getSignedPreKey().getId());
+        spk.put("publicKey", Base64.encodeToString(user.getSignedPreKey().getKeyPair().getPublicKey().serialize(), Base64.NO_WRAP));
+        spk.put("signature", Base64.encodeToString(user.getSignedPreKey().getSignature(), Base64.NO_WRAP));
+
+        JSONArray pks = new JSONArray();
+        JSONObject pk;
+        for (PreKeyRecord preKey : user.getPreKeys()) {
+            pk = new JSONObject();
+            pk.put("keyId", preKey.getId());
+            pk.put("publicKey", Base64.encodeToString(preKey.getKeyPair().getPublicKey().serialize(), Base64.NO_WRAP));
+            pks.put(pk);
         }
+
+        JSONObject pkb = new JSONObject();
+        pkb.put("identityKey", Base64.encodeToString(user.getIdentityKeyPair().getPublicKey().serialize(), Base64.NO_WRAP));
+        pkb.put("signedPreKey", spk);
+        pkb.put("registrationId", user.getRegistrationId());
+        pkb.put("preKeys", pks);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("username", user.getName());
+        jsonObject.put("preKeyBundle", pkb);
 
         RequestBody body = RequestBody.create(JSON, jsonObject.toString());
-        //Log.e("body", body.toString());
         Request request = new Request.Builder()
-                .url("http://192.168.2.116:4000/login/userdata")
+                .url(this.API_URL + "/user")
                 .post(body)
                 .build();
         httpClient.newCall(request).enqueue(new Callback() {
@@ -129,8 +131,6 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             String userdata = response.body().string();
                             Log.e("TAG", "sendUserDataToDatabase() userdata from response" +userdata);
-                            //Toast.makeText(MainActivity.this,  response.code() +" the code" , Toast.LENGTH_SHORT).show();
-
                             Intent showUserListActivity = new Intent(getApplicationContext(), UserListActivity.class);
                             showUserListActivity.putExtra("userdata", userdata);
                             startActivity(showUserListActivity);
