@@ -1,9 +1,10 @@
 package com.example.philippe.signalandroiddemo;
 
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Base64;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -13,19 +14,22 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.example.philippe.signalandroiddemo.signal.ChatPartner;
+import com.example.philippe.signalandroiddemo.signal.MessageModel;
+import com.example.philippe.signalandroiddemo.signal.SignalUser;
 import com.example.philippe.signalandroiddemo.signal.SignalWrapper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import android.util.Log;
+import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
+import org.whispersystems.libsignal.protocol.SignalMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -36,8 +40,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ChatActivity extends AppCompatActivity {
-    String chatPartnerName;
-    int chatPartnerId;
+
+    private SignalUser currentUser;
+    private ChatPartner currentChatPartner;
+
+    private SessionCipher sessionCipher;
+
     ArrayList<String> arrayListReceivedMessages = new ArrayList<>();
     ArrayList<String> arrayListSentMessages = new ArrayList<>();
     ArrayList<String> arrayListAllMessages = new ArrayList<>();
@@ -47,16 +55,16 @@ public class ChatActivity extends AppCompatActivity {
     OkHttpClient httpClient;
     MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    JSONObject userdataUser;
-    JSONObject userdataChatpartner;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
         httpClient = new OkHttpClient();
-        getDataFromIntent();
+
+        currentUser = ((ChatApplication)getApplicationContext()).getCurrentUser();
+        currentChatPartner = ((ChatApplication)getApplicationContext()).getCurrentChatPartner();
+        sessionCipher = SignalWrapper.createSessionCipher(currentUser, currentChatPartner);
 
         initActionbar();
 
@@ -102,16 +110,15 @@ public class ChatActivity extends AppCompatActivity {
 
         try {
             /*save in sendList*/
-            arrayListSentMessages.add(userdataUser.getString("name") + ": " + clearMessage);
+            arrayListSentMessages.add(currentUser.getName() + ": " + clearMessage);
             updateMessageList();
 
-            // TODO: sessionCipher
-//            CiphertextMessage ciphertextMessage = SignalWrapper.encrypt(userdataChatpartner.getInt("id"), clearMessage);
+            CiphertextMessage ciphertextMessage = SignalWrapper.encrypt(sessionCipher, clearMessage);
 
-            jsonObject.put("sourceRegistrationId", userdataUser.getInt("id"));
-            jsonObject.put("recipientRegistrationId", userdataChatpartner.getInt("id"));
-//            jsonObject.put("body", ciphertextMessage.serialize());
-//            jsonObject.put("type", ciphertextMessage.getType());
+            jsonObject.put("sourceRegistrationId", currentUser.getRegistrationId());
+            jsonObject.put("recipientRegistrationId", currentChatPartner.getRegistrationId());
+            jsonObject.put("body", Base64.encodeToString(ciphertextMessage.serialize(), Base64.NO_WRAP));
+            jsonObject.put("type", ciphertextMessage.getType());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -146,24 +153,16 @@ public class ChatActivity extends AppCompatActivity {
 
     private void updateMessages() {
         arrayListReceivedMessages.clear();
-        try {
-            //Log.e("userdata", "updateMessages: " + userdataUser.toString());
-            int userid = userdataUser.getInt("id");
-            int chatpartnerid = userdataChatpartner.getInt("id");
-
-            //received the sent messages from the chatpartner to the user
-            loadMessages(chatpartnerid, userid);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        //received the sent messages from the chatpartner to the user
+        loadMessages(currentChatPartner.getRegistrationId(), currentUser.getRegistrationId());
     }
 
-    private void loadMessages(final int senderid, final int recipientid) {
-        Log.e("TAG", "sender: " + senderid + ", recipient " + recipientid);
+    private void loadMessages(final int senderRegistrationId, final int recipientRegistrationId) {
+        Log.e("TAG", "sender: " + senderRegistrationId + ", recipient " + recipientRegistrationId);
 
 
         Request request = new Request.Builder()
-                .url(MainActivity.API_URL + "/messages/" + senderid + "/" + recipientid)
+                .url(MainActivity.API_URL + "/messages/" + senderRegistrationId + "/" + recipientRegistrationId)
                 .build();
         httpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -186,15 +185,12 @@ public class ChatActivity extends AppCompatActivity {
                         if (data.length() > 0) {
                             messageArray = new JSONArray(data);
                             for (int i = 0; i < messageArray.length(); i++) {
-                                JSONObject messageObject = messageArray.getJSONObject(i);
-//                                decrypt(userdataUser.getString("name"), userdataUser.getString("password"));
-                                String decryptedMessage = "";
-                                arrayListReceivedMessages.add(userdataChatpartner.getString("name") + ": " + decryptedMessage);
+                                MessageModel messageModel = new MessageModel(messageArray.getJSONObject(i));
+                                String decryptedMessage = SignalWrapper.decrypt(sessionCipher, messageModel);
+                                arrayListReceivedMessages.add(currentChatPartner.getName() + ": " + decryptedMessage);
                             }
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (JSONException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -227,20 +223,8 @@ public class ChatActivity extends AppCompatActivity {
         listAdapter.notifyDataSetChanged();
     }
 
-    //reading the chatpartner and the userdata from the activity before
-    private void getDataFromIntent() {
-        Intent intent = getIntent();
-        chatPartnerName = intent.getStringExtra("chatPartnerName");
-        chatPartnerId = intent.getIntExtra("chatPartnerId", -1);
-        try {
-            userdataUser = new JSONObject(intent.getStringExtra("userdata"));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void initActionbar() {
-        setTitle(chatPartnerName);
+        setTitle(currentChatPartner.getName());
         try {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         } catch (Exception e) {

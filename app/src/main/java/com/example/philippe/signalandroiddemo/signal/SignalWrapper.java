@@ -1,5 +1,7 @@
 package com.example.philippe.signalandroiddemo.signal;
 
+import android.util.Base64;
+
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.SessionBuilder;
@@ -65,7 +67,7 @@ public class SignalWrapper {
         sessionBuilder.process(other.getPreKeyBundle());
     }
 
-    public static SessionCipher createSessionCipher(SignalUser me, SignalUser other) {
+    public static SessionCipher createSessionCipher(SignalUser me, ChatPartner other) {
         return new SessionCipher(me.getStore(), other.getAddress());
     }
 
@@ -91,11 +93,11 @@ public class SignalWrapper {
         return new String(plaintext);
     }
 
-    /*public static String decrypt(SessionCipher sessionCipher, MessageModel messageModel) throws Exception {
+    public static String decrypt(SessionCipher sessionCipher, MessageModel messageModel) throws Exception {
         if (messageModel.getType() == CiphertextMessage.PREKEY_TYPE) {
-            return decrypt(sessionCipher, new PreKeySignalMessage(Base64.decode(messageModel.getBody(), Base64.NO_WRAP)));
+            return decrypt(sessionCipher, new PreKeySignalMessage(messageModel.getBody()));
         } else {
-            return decrypt(sessionCipher, new SignalMessage(Base64.decode(messageModel.getBody(), Base64.NO_WRAP)));
+            return decrypt(sessionCipher, new SignalMessage(messageModel.getBody()));
         }
-    }*/
+    }
 }
