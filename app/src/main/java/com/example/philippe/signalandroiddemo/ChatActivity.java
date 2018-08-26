@@ -28,8 +28,6 @@ import java.io.IOException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 
 import okhttp3.Call;
@@ -47,8 +45,6 @@ public class ChatActivity extends AppCompatActivity {
 
     private SessionCipher sessionCipher;
 
-    ArrayList<String> arrayListReceivedMessages = new ArrayList<>();
-    ArrayList<String> arrayListSentMessages = new ArrayList<>();
     ArrayList<String> arrayListAllMessages = new ArrayList<>();
     ArrayAdapter listAdapter;
     ListView listViewChat;
@@ -111,8 +107,8 @@ public class ChatActivity extends AppCompatActivity {
 
         try {
             /*save in sendList*/
-            arrayListSentMessages.add(currentUser.getName() + ", " + this.getFormattedDate() + ":\n" + clearMessage);
-            updateMessageList();
+            arrayListAllMessages.add(currentUser.getName() + ", " + this.getFormattedDate() + ":\n" + clearMessage);
+            listAdapter.notifyDataSetChanged();
 
             CiphertextMessage ciphertextMessage = SignalWrapper.encrypt(sessionCipher, clearMessage);
 
@@ -153,7 +149,6 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void updateMessages() {
-        arrayListReceivedMessages.clear();
         //received the sent messages from the chatpartner to the user
         loadMessages(currentChatPartner.getRegistrationId(), currentUser.getRegistrationId());
     }
@@ -188,7 +183,7 @@ public class ChatActivity extends AppCompatActivity {
                             for (int i = 0; i < messageArray.length(); i++) {
                                 MessageModel messageModel = new MessageModel(messageArray.getJSONObject(i));
                                 String decryptedMessage = SignalWrapper.decrypt(sessionCipher, messageModel);
-                                arrayListReceivedMessages.add(currentChatPartner.getName() + ", " + messageModel.getTimestamp() + ":\n" + decryptedMessage);
+                                arrayListAllMessages.add(currentChatPartner.getName() + ", " + messageModel.getTimestamp() + ":\n" + decryptedMessage);
                             }
                         }
                     } catch (Exception e) {
@@ -199,29 +194,11 @@ public class ChatActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateMessageList();
+                        listAdapter.notifyDataSetChanged();
                     }
                 });
             }
         });
-    }
-
-    private void updateMessageList() {
-        arrayListAllMessages.clear();
-        arrayListAllMessages.addAll(arrayListReceivedMessages);
-        arrayListAllMessages.addAll(arrayListSentMessages);
-
-        Collections.sort(arrayListAllMessages, new Comparator<String>() {
-            @Override
-            public int compare(String s1, String s2) {
-                return s1.compareToIgnoreCase(s2);
-            }
-        });
-
-        Log.e("TAG", "updateMessageList() arrayListReceivedMessages: " + arrayListReceivedMessages.toString());
-        Log.e("TAG", "updateMessageList() arrayListSentMessages: " + arrayListSentMessages.toString());
-        Log.e("TAG", "updateMessageList() arrayListReceivedMessages: " + arrayListAllMessages.toString());
-        listAdapter.notifyDataSetChanged();
     }
 
     private void initActionbar() {
