@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void sendUserDataToDatabase(SignalUser user) throws JSONException {
+    private void sendUserDataToDatabase(final SignalUser user) throws JSONException {
         /*send userdata to DB*/
 
         /*
@@ -130,9 +130,13 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             String userdata = response.body().string();
+                            JSONObject responseAsObject = new JSONObject(userdata);
+                            JSONObject userFromResponse = (JSONObject) responseAsObject.get("user");
+                            user.setId(userFromResponse.getInt("id"));
+                            ((ChatApplication)getApplicationContext()).setCurrentUser(user);
                             Log.e("TAG", "sendUserDataToDatabase() userdata from response" +userdata);
+
                             Intent showUserListActivity = new Intent(getApplicationContext(), UserListActivity.class);
-                            showUserListActivity.putExtra("userdata", userdata);
                             startActivity(showUserListActivity);
                         } catch (Exception e) {
                             e.printStackTrace();

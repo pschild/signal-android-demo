@@ -12,6 +12,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.example.philippe.signalandroiddemo.signal.SignalUser;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -87,11 +89,13 @@ public class UserListActivity extends AppCompatActivity {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+
+                SignalUser currentUser = ((ChatApplication)getApplicationContext()).getCurrentUser();
+
                 Log.e("userid", userid +"");
                 Intent showChatActivity = new Intent(getApplicationContext(), ChatActivity.class);
                 showChatActivity.putExtra("chatPartnerName", chatPartner);
                 showChatActivity.putExtra("chatPartnerId", userid);
-                showChatActivity.putExtra("userdata", getIntent().getStringExtra("userdata"));
                 startActivity(showChatActivity);
             }
         });

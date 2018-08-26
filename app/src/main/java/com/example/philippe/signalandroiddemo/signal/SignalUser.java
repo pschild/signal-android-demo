@@ -11,6 +11,7 @@ import java.util.List;
 
 public class SignalUser {
 
+    private int id;
     private String name;
     private int registrationId;
     private SignalProtocolAddress address;
@@ -18,6 +19,14 @@ public class SignalUser {
     private SignedPreKeyRecord signedPreKey;
     private List<PreKeyRecord> preKeys;
     private SignalProtocolStore store;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
