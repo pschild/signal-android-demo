@@ -17,17 +17,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Passwort" />
-
-    <EditText
-        android:id="@+id/editTextPassword"
-        android:layout_width="match_parent"
-        android:inputType="textPassword"
-        android:layout_height="wrap_content" />
-
     <!-- using a relative layout to place the button on the right -->
     <RelativeLayout
         android:layout_width="match_parent"

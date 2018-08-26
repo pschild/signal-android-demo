@@ -33,7 +33,7 @@ public class UserListActivity extends AppCompatActivity {
     ArrayList<String> arrayListUsernames;
     OkHttpClient httpClient;
     ArrayAdapter listAdapter;
-    JSONArray userlist;
+    JSONArray userlist = new JSONArray();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,15 +147,26 @@ public class UserListActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, final Response response) {
                 try {
-
+                    SignalUser currentUser = ((ChatApplication)getApplicationContext()).getCurrentUser();
                     String data = response.body().string();
-                    userlist = new JSONArray(data);
+                    JSONArray users = new JSONArray(data);
                     arrayListUsernames.clear();
-                    for (int i = 0; i < userlist.length(); i++) {
-                        JSONObject chatpartner = userlist.getJSONObject(i);
-                        arrayListUsernames.add(chatpartner.getString("name"));
+                    String username;
+                    for (int i = 0; i < users.length(); i++) {
+                        JSONObject chatpartner = users.getJSONObject(i);
+                        username = chatpartner.getString("name");
+                        if (!username.equalsIgnoreCase(currentUser.getName())) {
+                            userlist.put(chatpartner);
+                            arrayListUsernames.add(username);
+                        }
                     }
-                    listAdapter.notifyDataSetChanged();
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            listAdapter.notifyDataSetChanged();
+                        }
+                    });
                 } catch (Exception e) {
                     Log.e("Error", e.getMessage());
                     e.printStackTrace();

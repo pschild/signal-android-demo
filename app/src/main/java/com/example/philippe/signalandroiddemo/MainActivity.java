@@ -32,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String API_URL = "http://192.168.178.20:8081";
 
     EditText editTextName;
-    EditText editTextPassword;
 
     OkHttpClient httpClient;
     MediaType JSON = MediaType.get("application/json; charset=utf-8");
@@ -43,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         editTextName = findViewById(R.id.editTextName);
-        editTextPassword = findViewById(R.id.editTextPassword);
 
         httpClient = new OkHttpClient();
     }
