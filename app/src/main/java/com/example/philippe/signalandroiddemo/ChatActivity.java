@@ -20,16 +20,17 @@ import com.example.philippe.signalandroiddemo.signal.SignalUser;
 import com.example.philippe.signalandroiddemo.signal.SignalWrapper;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
-import org.whispersystems.libsignal.protocol.SignalMessage;
 
 import java.io.IOException;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -110,7 +111,7 @@ public class ChatActivity extends AppCompatActivity {
 
         try {
             /*save in sendList*/
-            arrayListSentMessages.add(currentUser.getName() + ": " + clearMessage);
+            arrayListSentMessages.add(currentUser.getName() + ", " + this.getFormattedDate() + ":\n" + clearMessage);
             updateMessageList();
 
             CiphertextMessage ciphertextMessage = SignalWrapper.encrypt(sessionCipher, clearMessage);
@@ -187,7 +188,7 @@ public class ChatActivity extends AppCompatActivity {
                             for (int i = 0; i < messageArray.length(); i++) {
                                 MessageModel messageModel = new MessageModel(messageArray.getJSONObject(i));
                                 String decryptedMessage = SignalWrapper.decrypt(sessionCipher, messageModel);
-                                arrayListReceivedMessages.add(currentChatPartner.getName() + ": " + decryptedMessage);
+                                arrayListReceivedMessages.add(currentChatPartner.getName() + ", " + messageModel.getTimestamp() + ":\n" + decryptedMessage);
                             }
                         }
                     } catch (Exception e) {
@@ -230,5 +231,11 @@ public class ChatActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private String getFormattedDate(){
+        Date date = new Date();
+        Format format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return format.format(date);
     }
 }
