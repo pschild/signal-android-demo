@@ -18,7 +18,7 @@ import com.example.philippe.signalandroiddemo.signal.SignalWrapper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.whispersystems.libsignal.logging.Log;
+import android.util.Log;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
 
 import java.io.IOException;
@@ -57,8 +57,6 @@ public class ChatActivity extends AppCompatActivity {
 
         httpClient = new OkHttpClient();
         getDataFromIntent();
-
-        getDataFromChatPartner();
 
         initActionbar();
 
@@ -248,34 +246,5 @@ public class ChatActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void getDataFromChatPartner() {
-        Request request = new Request.Builder()
-                .url(MainActivity.API_URL + "/user/" + chatPartnerId)
-                .build();
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Call call, final Response response) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String data = response.body().string();
-                            Log.e("TAG", "userdataChatpartner " + data);
-                            userdataChatpartner = new JSONObject(data);
-                        } catch (Exception e) {
-                            Log.e("Error", e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
-        });
     }
 }

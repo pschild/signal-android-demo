@@ -12,7 +12,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.example.philippe.signalandroiddemo.signal.ChatPartner;
 import com.example.philippe.signalandroiddemo.signal.SignalUser;
+import com.example.philippe.signalandroiddemo.signal.SignalWrapper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -82,7 +84,6 @@ public class UserListActivity extends AppCompatActivity {
         listViewUsers.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String chatPartner = String.valueOf(parent.getItemAtPosition(position));
                 int userid = -1;
                 try {
                     userid = userlist.getJSONObject(position).getInt("id");
@@ -90,13 +91,45 @@ public class UserListActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                SignalUser currentUser = ((ChatApplication)getApplicationContext()).getCurrentUser();
+                startChatWithChatPartner(userid);
+            }
+        });
+    }
 
-                Log.e("userid", userid +"");
-                Intent showChatActivity = new Intent(getApplicationContext(), ChatActivity.class);
-                showChatActivity.putExtra("chatPartnerName", chatPartner);
-                showChatActivity.putExtra("chatPartnerId", userid);
-                startActivity(showChatActivity);
+    private void startChatWithChatPartner(final int chatPartnerId) {
+        Request request = new Request.Builder()
+                .url(MainActivity.API_URL + "/user/" + chatPartnerId)
+                .build();
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(final Call call, final Response response) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String data = response.body().string();
+                            Log.e("TAG", "userdataChatpartner " + data);
+                            JSONObject userdataChatpartner = new JSONObject(data);
+                            ChatPartner chatPartner = new ChatPartner(userdataChatpartner);
+                            ((ChatApplication)getApplicationContext()).setCurrentChatPartner(chatPartner);
+
+                            SignalUser currentUser = ((ChatApplication)getApplicationContext()).getCurrentUser();
+
+                            SignalWrapper.initSession(currentUser, chatPartner);
+
+                            Intent showChatActivity = new Intent(getApplicationContext(), ChatActivity.class);
+                            startActivity(showChatActivity);
+                        } catch (Exception e) {
+                            Log.e("Error", e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                });
             }
         });
     }
@@ -113,25 +146,20 @@ public class UserListActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, final Response response) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
+                try {
 
-                            String data = response.body().string();
-                            userlist = new JSONArray(data);
-                            arrayListUsernames.clear();
-                            for (int i = 0; i < userlist.length(); i++) {
-                                JSONObject chatpartner = userlist.getJSONObject(i);
-                                arrayListUsernames.add(chatpartner.getString("name"));
-                            }
-                            listAdapter.notifyDataSetChanged();
-                        } catch (Exception e) {
-                            Log.e("Error", e.getMessage());
-                            e.printStackTrace();
-                        }
+                    String data = response.body().string();
+                    userlist = new JSONArray(data);
+                    arrayListUsernames.clear();
+                    for (int i = 0; i < userlist.length(); i++) {
+                        JSONObject chatpartner = userlist.getJSONObject(i);
+                        arrayListUsernames.add(chatpartner.getString("name"));
                     }
-                });
+                    listAdapter.notifyDataSetChanged();
+                } catch (Exception e) {
+                    Log.e("Error", e.getMessage());
+                    e.printStackTrace();
+                }
             }
         });
     }

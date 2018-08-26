@@ -1,7 +1,5 @@
 package com.example.philippe.signalandroiddemo.signal;
 
-import android.util.Base64;
-
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.SessionBuilder;
@@ -11,7 +9,6 @@ import org.whispersystems.libsignal.UntrustedIdentityException;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
-import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -63,14 +60,9 @@ public class SignalWrapper {
         return KeyHelper.generatePreKeys(1, count);
     }
 
-    public static void initSession(SignalUser me, SignalUser other) throws Exception {
+    public static void initSession(SignalUser me, ChatPartner other) throws Exception {
         SessionBuilder sessionBuilder = new SessionBuilder(me.getStore(), other.getAddress());
         sessionBuilder.process(other.getPreKeyBundle());
-    }
-
-    public static void initSession(SignalUser me, SignalUser other, PreKeyBundle preKeyBundle) throws Exception {
-        SessionBuilder sessionBuilder = new SessionBuilder(me.getStore(), other.getAddress());
-        sessionBuilder.process(preKeyBundle);
     }
 
     public static SessionCipher createSessionCipher(SignalUser me, SignalUser other) {

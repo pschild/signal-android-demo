@@ -2,7 +2,6 @@ package com.example.philippe.signalandroiddemo.signal;
 
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.SignalProtocolAddress;
-import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -82,23 +81,5 @@ public class SignalUser {
 
     public void setStore(SignalProtocolStore store) {
         this.store = store;
-    }
-
-    public PreKeyBundle getPreKeyBundle() throws Exception {
-        PreKeyRecord firstPreKey = preKeys.get(0);
-        if (firstPreKey == null) {
-            throw new Exception("Kein PreKey mehr vorhanden");
-        }
-
-        preKeys.remove(0);
-        return new PreKeyBundle(
-                store.getLocalRegistrationId(),
-                0,
-                firstPreKey.getId(),
-                firstPreKey.getKeyPair().getPublicKey(),
-                signedPreKey.getId(),
-                signedPreKey.getKeyPair().getPublicKey(),
-                signedPreKey.getSignature(),
-                store.getIdentityKeyPair().getPublicKey());
     }
 }
