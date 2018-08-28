@@ -65,11 +65,11 @@ public class UserListActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        //Klick Methode für den Zurück-Nutton
+        //Klick Methode für den Zurück-Button
         if (id == android.R.id.home) {
             this.finish();
         }
-        //Klick Methode für den update-Nutton
+        //Klick Methode für den update-Button
         if (id == R.id.action_update) {
             loadUsernames();
         }
