@@ -111,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
         jsonObject.put("preKeyBundle", pkb);
 
         RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+        // REST-Request: send userdata to server in order to register it
         Request request = new Request.Builder()
                 .url(this.API_URL + "/user")
                 .post(body)
@@ -131,8 +132,9 @@ public class MainActivity extends AppCompatActivity {
                             JSONObject responseAsObject = new JSONObject(userdata);
                             JSONObject userFromResponse = (JSONObject) responseAsObject.get("user");
                             user.setId(userFromResponse.getInt("id"));
+
+                            // save current user in app's state
                             ((ChatApplication)getApplicationContext()).setCurrentUser(user);
-                            Log.e("TAG", "sendUserDataToDatabase() userdata from response" +userdata);
 
                             Intent showUserListActivity = new Intent(getApplicationContext(), UserListActivity.class);
                             startActivity(showUserListActivity);

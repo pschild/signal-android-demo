@@ -97,6 +97,7 @@ public class UserListActivity extends AppCompatActivity {
     }
 
     private void startChatWithChatPartner(final int chatPartnerId) {
+        // REST-Request: get public user information, such as public keys
         Request request = new Request.Builder()
                 .url(MainActivity.API_URL + "/user/" + chatPartnerId)
                 .build();
@@ -113,13 +114,13 @@ public class UserListActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             String data = response.body().string();
-                            Log.e("TAG", "userdataChatpartner " + data);
                             JSONObject userdataChatpartner = new JSONObject(data);
                             ChatPartner chatPartner = new ChatPartner(userdataChatpartner);
                             ((ChatApplication)getApplicationContext()).setCurrentChatPartner(chatPartner);
 
                             SignalUser currentUser = ((ChatApplication)getApplicationContext()).getCurrentUser();
 
+                            // initialize session with current chatpartner
                             SignalWrapper.initSession(currentUser, chatPartner);
 
                             Intent showChatActivity = new Intent(getApplicationContext(), ChatActivity.class);
@@ -135,6 +136,7 @@ public class UserListActivity extends AppCompatActivity {
     }
 
     private void loadUsernames() {
+        // REST-Request: get a list of all users to show in the contact list
         Request request = new Request.Builder()
                 .url(MainActivity.API_URL + "/users")
                 .build();

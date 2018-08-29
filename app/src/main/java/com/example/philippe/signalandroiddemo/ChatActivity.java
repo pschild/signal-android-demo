@@ -64,7 +64,6 @@ public class ChatActivity extends AppCompatActivity {
         sessionCipher = SignalWrapper.createSessionCipher(currentUser, currentChatPartner);
 
         initActionbar();
-
         initList();
     }
 
@@ -94,8 +93,6 @@ public class ChatActivity extends AppCompatActivity {
 
     private void initList() {
         listViewChat = findViewById(R.id.listViewChat);
-
-//        messages = arrayListReceivedMessages.toArray(new String[0]);
         listAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, arrayListAllMessages);
         listViewChat.setAdapter(listAdapter);
     }
@@ -106,12 +103,14 @@ public class ChatActivity extends AppCompatActivity {
         JSONObject jsonObject = new JSONObject();
 
         try {
-            /*save in sendList*/
+            // add outgoing message directly to UI
             arrayListAllMessages.add(currentUser.getName() + ", " + this.getFormattedDate() + ":\n" + clearMessage);
             listAdapter.notifyDataSetChanged();
 
+            // encrypt message
             CiphertextMessage ciphertextMessage = SignalWrapper.encrypt(sessionCipher, clearMessage);
 
+            // prepare JSON object to send to server
             jsonObject.put("sourceRegistrationId", currentUser.getRegistrationId());
             jsonObject.put("recipientRegistrationId", currentChatPartner.getRegistrationId());
             jsonObject.put("body", Base64.encodeToString(ciphertextMessage.serialize(), Base64.NO_WRAP));
@@ -119,8 +118,8 @@ public class ChatActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.e("TAG", "sendMessage() ich schicke ab: " + jsonObject.toString());
         RequestBody body = RequestBody.create(JSON, jsonObject.toString());
+        // REST-Request: send message
         Request request = new Request.Builder()
                 .url(MainActivity.API_URL + "/message")
                 .post(body)
@@ -138,7 +137,6 @@ public class ChatActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             String responseString = response.body().string();
-                            Log.e("TAG", "sendMessage() responseString " + responseString);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -154,9 +152,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void loadMessages(final int senderRegistrationId, final int recipientRegistrationId) {
-        Log.e("TAG", "sender: " + senderRegistrationId + ", recipient " + recipientRegistrationId);
-
-
+        // REST-Request: get messages for current user, sent by user with registrationId senderRegistrationId
         Request request = new Request.Builder()
                 .url(MainActivity.API_URL + "/messages/" + senderRegistrationId + "/" + recipientRegistrationId)
                 .build();
@@ -172,17 +168,18 @@ public class ChatActivity extends AppCompatActivity {
                 final String data;
                 if (response.code() == 204) {
                     Toast.makeText(ChatActivity.this, "Keine Nachrichten", Toast.LENGTH_SHORT).show();
-                    Log.e("TAG", "loadMessages() Statuscode " + response.code());
                 } else {
                     try {
                         data = response.body().string();
-                        //Log.e("arraylist", data);
                         JSONArray messageArray = null;
                         if (data.length() > 0) {
                             messageArray = new JSONArray(data);
+                            // loop through all new messages to decrypt them
                             for (int i = 0; i < messageArray.length(); i++) {
                                 MessageModel messageModel = new MessageModel(messageArray.getJSONObject(i));
+                                // decrypt message
                                 String decryptedMessage = SignalWrapper.decrypt(sessionCipher, messageModel);
+                                // add decrypted message to UI
                                 arrayListAllMessages.add(currentChatPartner.getName() + ", " + messageModel.getTimestamp() + ":\n" + decryptedMessage);
                             }
                         }
