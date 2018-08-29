@@ -151,10 +151,12 @@ public class UserListActivity extends AppCompatActivity {
                     String data = response.body().string();
                     JSONArray users = new JSONArray(data);
                     arrayListUsernames.clear();
+                    userlist = new JSONArray();
                     String username;
                     for (int i = 0; i < users.length(); i++) {
                         JSONObject chatpartner = users.getJSONObject(i);
                         username = chatpartner.getString("name");
+                        // filter current user, so that he's not shown in the contacts list
                         if (!username.equalsIgnoreCase(currentUser.getName())) {
                             userlist.put(chatpartner);
                             arrayListUsernames.add(username);
